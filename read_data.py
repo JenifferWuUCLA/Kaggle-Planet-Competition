@@ -19,7 +19,8 @@ class Reader():
         self.batch_size = config.batch_size
         self.imgs_path = config.imgs_path
         self.lineidx = 0
-        self.lable_tpyes_num = len(config.usecols) 
+        self.sample_num = len(self.imgnames)
+        self.lable_tpyes_num = len(config.usecols)
         self.current_sample_index = 0
         self.current_sample = list()
         for i in xrange(self.lable_tpyes_num):
@@ -52,22 +53,22 @@ class Reader():
 
     def batch(self):
         batch_imgnames = list()
-        for idx in range(self.lineidx, self.lineidx+self.batch_size):
+        lineidx_upper = self.lineidx + self.batch_size
+        if lineidx_upper > self.sample_num:
+            lineidx_upper = self.sample_num
+        for idx in range(self.lineidx, lineidx_upper):
             batch_imgnames.append(self.imgnames[idx])
-        batch_labels = self.labels[self.lineidx:(self.lineidx+self.batch_size)]
-        self.lineidx = self.lineidx+self.batch_size
+        batch_labels = self.labels[self.lineidx:lineidx_upper]
+        self.lineidx = lineidx_upper
+        if self.lineidx >= self.sample_num:
+            self.lineidx = 0
 
         img_list = list()
         for imgname in batch_imgnames:
-            path = self.imgs_path+imgname+".jpg"
-            #print path
-            #img = cv2.imread(path)
-            #img = cv2.resize(img, (224, 224))
+            path = self.imgs_path + imgname[0] + ".jpg"
             img = utils.load_image(path)
             img_list.append(img)
-
-        #print batch_labels
-        #print img_list
+        
         batch_imgs = np.reshape(np.stack(img_list), [-1,224,224,3])
         batch_labels = np.reshape(batch_labels, [-1, self.labels.shape[1]])
         return batch_imgs, batch_labels
